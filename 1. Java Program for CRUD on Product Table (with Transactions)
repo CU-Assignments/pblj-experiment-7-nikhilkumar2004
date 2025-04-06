@@ -1,0 +1,102 @@
+import java.sql.*;
+import java.util.Scanner;
+
+public class ProductCRUD {
+    static final String DB_URL = "jdbc:mysql://localhost:3306/yourDB";
+    static final String USER = "root";
+    static final String PASS = "yourpassword";
+
+    public static void main(String[] args) {
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+             Scanner sc = new Scanner(System.in)) {
+
+            conn.setAutoCommit(false);  // Start transaction
+
+            while (true) {
+                System.out.println("\n1. Create Product\n2. Read Products\n3. Update Product\n4. Delete Product\n5. Exit");
+                int choice = sc.nextInt();
+                sc.nextLine();
+
+                switch (choice) {
+                    case 1:
+                        System.out.print("Enter Product Name: ");
+                        String name = sc.nextLine();
+                        System.out.print("Enter Price: ");
+                        double price = sc.nextDouble();
+                        System.out.print("Enter Quantity: ");
+                        int qty = sc.nextInt();
+
+                        String insert = "INSERT INTO Product (ProductName, Price, Quantity) VALUES (?, ?, ?)";
+                        try (PreparedStatement ps = conn.prepareStatement(insert)) {
+                            ps.setString(1, name);
+                            ps.setDouble(2, price);
+                            ps.setInt(3, qty);
+                            ps.executeUpdate();
+                            conn.commit();
+                            System.out.println("Product added successfully.");
+                        }
+                        break;
+
+                    case 2:
+                        String select = "SELECT * FROM Product";
+                        try (Statement stmt = conn.createStatement();
+                             ResultSet rs = stmt.executeQuery(select)) {
+                            while (rs.next()) {
+                                System.out.println(rs.getInt("ProductID") + " - " +
+                                        rs.getString("ProductName") + " - " +
+                                        rs.getDouble("Price") + " - " +
+                                        rs.getInt("Quantity"));
+                            }
+                        }
+                        break;
+
+                    case 3:
+                        System.out.print("Enter Product ID to update: ");
+                        int updateId = sc.nextInt();
+                        sc.nextLine();
+                        System.out.print("New Name: ");
+                        String newName = sc.nextLine();
+                        System.out.print("New Price: ");
+                        double newPrice = sc.nextDouble();
+                        System.out.print("New Quantity: ");
+                        int newQty = sc.nextInt();
+
+                        String update = "UPDATE Product SET ProductName=?, Price=?, Quantity=? WHERE ProductID=?";
+                        try (PreparedStatement ps = conn.prepareStatement(update)) {
+                            ps.setString(1, newName);
+                            ps.setDouble(2, newPrice);
+                            ps.setInt(3, newQty);
+                            ps.setInt(4, updateId);
+                            ps.executeUpdate();
+                            conn.commit();
+                            System.out.println("Product updated.");
+                        }
+                        break;
+
+                    case 4:
+                        System.out.print("Enter Product ID to delete: ");
+                        int deleteId = sc.nextInt();
+                        String delete = "DELETE FROM Product WHERE ProductID=?";
+                        try (PreparedStatement ps = conn.prepareStatement(delete)) {
+                            ps.setInt(1, deleteId);
+                            ps.executeUpdate();
+                            conn.commit();
+                            System.out.println("Product deleted.");
+                        }
+                        break;
+
+                    case 5:
+                        conn.close();
+                        System.out.println("Goodbye!");
+                        return;
+
+                    default:
+                        System.out.println("Invalid option.");
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
